@@ -8,7 +8,6 @@ var suite = vows.describe('Dynamic data addition in crossfilter');
 var width = 200;
 var height = 200;
 var radius = 100;
-var innerRadius = 30;
 
 var baseData = crossfilter(json);
 
@@ -29,6 +28,7 @@ function buildPieChart(id) {
         .transitionDuration(0);
     chart.render();
     baseData.add(json2);
+    chart.expireCache();
     return chart;
 }
 
@@ -47,10 +47,12 @@ function buildLineChart(id) {
         .x(d3.time.scale().domain([new Date(2012, 4, 20), new Date(2012, 7, 15)]))
         .transitionDuration(0)
         .xUnits(d3.time.days)
+        .brushOn(false)
         .renderArea(true)
         .renderTitle(true);
     chart.render();
     baseData2.add(json2);
+    chart.expireCache();
     return chart;
 }
 
@@ -66,16 +68,20 @@ suite.addBatch({
             return chart;
         },
         'slice g should be created with class': function(pieChart) {
-            assert.equal(pieChart.selectAll("svg g g.pie-slice").data().length, 7);
+            assert.lengthOf(pieChart.selectAll("svg g g.pie-slice").data(), 7);
         },
         'slice path should be created': function(pieChart) {
-            assert.equal(pieChart.selectAll("svg g g.pie-slice path").data().length, 7);
+            assert.lengthOf(pieChart.selectAll("svg g g.pie-slice path").data(), 7);
         },
         'default function should be used to dynamically generate label': function(chart) {
-            assert.equal(d3.select(chart.selectAll("text.pie-slice")[0][0]).text(), "66");
+            assert.equal(d3.select(chart.selectAll("text.pie-slice")[0][0]).text(), "11");
+        },
+        'pie chart slices should be in numerical order': function(chart) {
+            assert.deepEqual(chart.selectAll("text.pie-slice").data().map(function(slice) { return slice.data.key; }),
+                             ["11","22","33","44","55","66","76"]);
         },
         'default function should be used to dynamically generate title': function(chart) {
-            assert.equal(d3.select(chart.selectAll("g.pie-slice title")[0][0]).text(), "66: 1");
+            assert.equal(d3.select(chart.selectAll("g.pie-slice title")[0][0]).text(), "11: 1");
         },
         teardown:function(chart) {
             resetAllFilters();
@@ -85,11 +91,11 @@ suite.addBatch({
     'line chart segment addition': {
         topic: function() {
             var chart = buildLineChart("line-chart");
-            chart.redraw();
+            chart.render();
             return chart;
         },
         'number of dots should equal the size of the group': function(lineChart) {
-            assert.equal(lineChart.selectAll("circle.dot")[0].length, timeGroup.size());
+            assert.lengthOf(lineChart.selectAll("circle.dot")[0], timeGroup.size());
         },
         'number of line segments should equal the size of the group': function(lineChart) {
             var path = lineChart.selectAll("path.line").attr("d");
@@ -102,6 +108,19 @@ suite.addBatch({
         teardown:function(chart) {
             resetAllFilters();
             resetBody();
+        }
+    },
+    'resetting line chart with fewer data points': {
+        'it should not contain stale data points': function() {
+            var chart = buildLineChart("stackable-line-chart");
+            chart.render();
+
+            timeDimension.filterAll();
+            baseData2.remove();
+            baseData2.add(json2);
+            chart.render();
+
+            assert.equal(chart.getChartStack().getDataLayers()[0].length, 2);
         }
     }
 });

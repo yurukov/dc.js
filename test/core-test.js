@@ -1,9 +1,9 @@
 require("./env");
 
-var vows = require('vows');
-var assert = require('assert');
+var vows = require("vows"),
+    assert = require("assert");
 
-var suite = vows.describe('Core');
+var suite = vows.describe("ns");
 
 suite.addBatch({
     'dc.version': {
@@ -11,8 +11,14 @@ suite.addBatch({
             return dc.version;
         },
 
-        'has the form major.minor.patch': function (version) {
-            assert.match(version, /^[0-9]+\.[0-9]+\.[0-9]+$/);
+        'should use semantic versions': function (version) {
+            // from https://raw.github.com/coolaj86/semver-utils/v1.0.3/semver-utils.js
+            //               |optional 'v'
+            //               | | 3 segment version
+            //               | |                    |optional release prefixed by '-'
+            //               | |                    |                                        |optional build prefixed by '+'
+            var reSemver = /^v?((\d+)\.(\d+)\.(\d+))(?:-([\dA-Za-z\-]+(?:\.[\dA-Za-z\-]+)*))?(?:\+([\dA-Za-z\-]+(?:\.[\dA-Za-z\-]+)*))?$/;
+            assert.match(version, reSemver);
         }
     },
     'dc.charts': {
@@ -20,6 +26,7 @@ suite.addBatch({
             var chart = dc.pieChart("#id").dimension(valueDimension).group(valueGroup);
             sinon.spy(chart, "filterAll");
             sinon.spy(chart, "render");
+            sinon.spy(chart, "redraw");
             return chart;
         },
         'should register chart object': function (chart) {
@@ -120,7 +127,7 @@ suite.addBatch({
         },
         '.float': {
             topic: function () {
-                return dc.units.float.precision(0.001)(0.49999, 1.0);
+                return dc.units.fp.precision(0.001)(0.49999, 1.0);
             },
             'units should be generated according to the precision': function (units) {
                 assert.equal(units, 501);
@@ -131,7 +138,7 @@ suite.addBatch({
                 return dc.units.ordinal("a", "d", ["a", "b", "c", "d"]);
             },
             'units should be based on count': function (units) {
-                assert.equal(units.length, 4);
+                assert.lengthOf(units, 4);
             }
         }
     },
@@ -159,14 +166,14 @@ suite.addBatch({
             assert.equal(o.foo(), "foo");
         },
         'should expose existing function': function (o) {
-            dc.override(o, "foo", function (_super) {
-                return _super() + "2";
+            dc.override(o, "foo", function () {
+                return this._foo() + "2";
             });
             assert.equal(o.foo(), "foo2");
         },
         'should expose existing function with args': function (o) {
-            dc.override(o, "goo", function (i, _super) {
-                return _super(i) + 2;
+            dc.override(o, "goo", function (i) {
+                return this._goo(i) + 2;
             });
             assert.equal(o.goo(1), 3);
         }
@@ -181,10 +188,10 @@ suite.addBatch({
             sinon.spy(chart, "render");
             dc.pieChart("#b", "groupA").dimension(valueDimension).group(valueGroup);
             dc.bubbleChart("#c", "groupB").dimension(valueDimension).group(valueGroup);
-            dc.barChart("#1", "groupB").dimension(valueDimension).group(valueGroup);
-            dc.lineChart("#2", "groupB").dimension(valueDimension).group(valueGroup);
-            dc.dataCount("#3", "groupB").dimension(valueDimension).group(valueGroup);
-            dc.dataTable("#4", "groupB").dimension(valueDimension).group(valueGroup);
+            dc.barChart("#b1", "groupB").dimension(valueDimension).group(valueGroup);
+            dc.lineChart("#b2", "groupB").dimension(valueDimension).group(valueGroup);
+            dc.dataCount("#b3", "groupB").dimension(valueDimension).group(valueGroup);
+            dc.dataTable("#b4", "groupB").dimension(valueDimension).group(valueGroup);
             return chart;
         },
         'should register chart object': function (chart) {

@@ -19,7 +19,7 @@ suite.addBatch({
                 .transitionDuration(0)
                 .title(function(d){return "Title: " + d.key;})
                 .r(d3.scale.linear().domain([0, 500]))
-                .colors(['blue'])
+                .ordinalColors(['blue'])
                 .point("California", 100, 120)
                 .point("Colorado", 300, 120)
                 .point("Delaware", 500, 220)
@@ -36,14 +36,14 @@ suite.addBatch({
             assert.isTrue(dc.hasChart(chart));
         },
         'correct number of overlay g should be generated':function(chart){
-            assert.equal(chart.selectAll("g.node")[0].length, 6);
+            assert.lengthOf(chart.selectAll("g.node")[0], 6);
         },
         'correct class name for overlay g should be generated':function(chart){
             assert.equal(d3.select(chart.selectAll("g.node")[0][0]).attr("class"), "node california");
             assert.equal(d3.select(chart.selectAll("g.node")[0][3]).attr("class"), "node ontario");
         },
         'correct number of overlay bubble should be generated':function(chart){
-            assert.equal(chart.selectAll("circle.bubble")[0].length, 6);
+            assert.lengthOf(chart.selectAll("circle.bubble")[0], 6);
         },
         'correct translate for overlay g should be generated':function(chart){
             assert.equal(d3.select(chart.selectAll("g.node")[0][0]).attr("transform"), "translate(100,120)");
@@ -59,7 +59,7 @@ suite.addBatch({
         },
         'label should only be generated once':function(chart){
             chart.redraw();
-            assert.equal(chart.selectAll("g.node text")[0].length, 6);
+            assert.lengthOf(chart.selectAll("g.node text")[0], 6);
         },
         'correct title should be generated':function(chart){
             assert.equal(d3.select(chart.selectAll("g.node title")[0][0]).text(), "Title: California");
@@ -67,16 +67,18 @@ suite.addBatch({
         },
         'title should only be generated once':function(chart){
             chart.redraw();
-            assert.equal(chart.selectAll("g.node title")[0].length, 6);
+            assert.lengthOf(chart.selectAll("g.node title")[0], 6);
         },
-        'correct color for circle should be filled':function(chart){
+        'correct color for circle should be filled': function(chart){
             assert.equal(d3.select(chart.selectAll("circle.bubble")[0][0]).attr("fill"), "blue");
             assert.equal(d3.select(chart.selectAll("circle.bubble")[0][3]).attr("fill"), "blue");
         },
         'correct bubble should be highlighted when filter is active':function(chart){
+            chart.filter("Colorado");
             chart.filter("California");
             chart.redraw();
             assert.equal(d3.select(chart.selectAll("g.node")[0][0]).attr("class"), "node california selected");
+            assert.equal(d3.select(chart.selectAll("g.node")[0][1]).attr("class"), "node colorado selected");
             assert.equal(d3.select(chart.selectAll("g.node")[0][3]).attr("class"), "node ontario deselected");
         },
 

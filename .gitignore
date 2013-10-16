@@ -11,3 +11,12 @@ node_modules
 
 # vim files
 .*.swp
+
+# mac
+.DS_Store
+
+# ctag
+.tags
+
+# files for gh-pages
+.grunt
